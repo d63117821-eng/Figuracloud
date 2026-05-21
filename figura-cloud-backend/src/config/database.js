@@ -2,17 +2,31 @@ const { Sequelize } = require('sequelize');
 const config = require('./index');
 const logger = require('../utils/logger');
 
-// Create Sequelize instance
-const sequelize = new Sequelize(config.DATABASE_URL, {
-  dialect: 'postgres',
-  logging: config.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
-  pool: {
-    max: 10,
-    min: 0,
-    acquire: 30000,
-    idle: 10000,
-  },
-});
+// Use SQLite for development if PostgreSQL is not available
+const isDev = config.NODE_ENV === 'development';
+const useSQLite = isDev && (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('localhost:5432'));
+
+let sequelize;
+
+if (useSQLite) {
+  logger.info('Using SQLite for development (PostgreSQL not configured or unavailable)');
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: './figura-cloud.db',
+    logging: isDev ? (msg) => logger.debug(msg) : false,
+  });
+} else {
+  sequelize = new Sequelize(config.DATABASE_URL, {
+    dialect: 'postgres',
+    logging: isDev ? (msg) => logger.debug(msg) : false,
+    pool: {
+      max: 10,
+      min: 0,
+      acquire: 30000,
+      idle: 10000,
+    },
+  });
+}
 
 const connectDB = async () => {
   try {
