@@ -30,22 +30,20 @@ const Avatar = sequelize.define('Avatar', {
       key: 'id',
     },
   },
-  file: {
-    luaScript: {
-      type: DataTypes.TEXT,
-      allowNull: false,
-    },
-    thumbnail: {
-      type: DataTypes.STRING,
-    },
-    size: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    hash: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
+  fileLuaScript: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+  },
+  fileThumbnail: {
+    type: DataTypes.STRING,
+  },
+  fileSize: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  fileHash: {
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   category: {
     type: DataTypes.ENUM('anime', 'realistic', 'cartoon', 'fantasy', 'sci-fi', 'other'),
