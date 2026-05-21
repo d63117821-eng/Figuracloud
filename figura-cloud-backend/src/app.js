@@ -11,7 +11,7 @@ const path = require('path');
 
 const config = require('./config');
 const logger = require('./utils/logger');
-const connectDB = require('./config/database');
+const { connectDB } = require('./config/database');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { trackHttpRequest } = require('./controllers/monitoringController');
 
