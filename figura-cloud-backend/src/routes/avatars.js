@@ -2,11 +2,13 @@ const express = require('express');
 const { body, query } = require('express-validator');
 const router = express.Router();
 const avatarController = require('../controllers/avatarController');
-const { protect, optionalAuth } = require('../middleware/auth');
-const { authorize } = require('../middleware/auth');
-const { uploadAvatar } = require('../middleware/upload');
+const { protect, optionalAuth, authorize } = require('../middleware/auth');
+const uploadMiddleware = require('../middleware/upload');
 const { uploadLimiter, downloadLimiter } = require('../middleware/rateLimiter');
 const { validate } = require('../middleware/errorHandler');
+
+// Extract uploadAvatar from middleware
+const { uploadAvatar } = uploadMiddleware;
 
 // Validation rules
 const createAvatarValidation = [

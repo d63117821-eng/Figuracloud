@@ -46,7 +46,7 @@ register.registerMetric(totalAvatarsGauge);
 // @desc    Health check
 // @route   GET /api/v1/monitoring/health
 // @access  Public
-exports.healthCheck = async (req, res) => {
+const healthCheck = async (req, res) => {
   try {
     const health = {
       status: 'healthy',
@@ -84,7 +84,7 @@ exports.healthCheck = async (req, res) => {
 // @desc    Get Prometheus metrics
 // @route   GET /api/v1/monitoring/metrics
 // @access  Public
-exports.getMetrics = async (req, res) => {
+const getMetrics = async (req, res) => {
   try {
     // Update custom metrics
     const activeUsers = await User.countDocuments({ isActive: true });
@@ -104,7 +104,7 @@ exports.getMetrics = async (req, res) => {
 // @desc    Get system status
 // @route   GET /api/v1/monitoring/status
 // @access  Public
-exports.getSystemStatus = async (req, res) => {
+const getSystemStatus = async (req, res) => {
   try {
     const mongoose = require('mongoose');
 
@@ -146,7 +146,7 @@ exports.getSystemStatus = async (req, res) => {
 // @desc    Get monitoring dashboard data
 // @route   GET /api/v1/monitoring/dashboard
 // @access  Private (Admin)
-exports.getDashboard = async (req, res) => {
+const getDashboard = async (req, res) => {
   try {
     const now = new Date();
     const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -195,7 +195,7 @@ exports.getDashboard = async (req, res) => {
 // @desc    Get active users
 // @route   GET /api/v1/monitoring/users/active
 // @access  Private (Admin)
-exports.getActiveUsers = async (req, res) => {
+const getActiveUsers = async (req, res) => {
   try {
     const { limit = 50 } = req.query;
 
@@ -221,7 +221,7 @@ exports.getActiveUsers = async (req, res) => {
 // @desc    Get performance metrics
 // @route   GET /api/v1/monitoring/performance
 // @access  Private (Admin)
-exports.getPerformanceMetrics = async (req, res) => {
+const getPerformanceMetrics = async (req, res) => {
   try {
     const { period = '24h' } = req.query;
 
@@ -261,7 +261,7 @@ exports.getPerformanceMetrics = async (req, res) => {
 // @desc    Get error logs
 // @route   GET /api/v1/monitoring/errors
 // @access  Private (Admin)
-exports.getErrorLogs = async (req, res) => {
+const getErrorLogs = async (req, res) => {
   try {
     const { limit = 100, status = 'failure' } = req.query;
 
@@ -287,7 +287,7 @@ exports.getErrorLogs = async (req, res) => {
 // @desc    Get database statistics
 // @route   GET /api/v1/monitoring/database
 // @access  Private (Admin)
-exports.getDatabaseStats = async (req, res) => {
+const getDatabaseStats = async (req, res) => {
   try {
     const mongoose = require('mongoose');
     const db = mongoose.connection.db;
@@ -320,7 +320,7 @@ exports.getDatabaseStats = async (req, res) => {
 // @desc    Get cache statistics
 // @route   GET /api/v1/monitoring/cache
 // @access  Private (Admin)
-exports.getCacheStats = async (req, res) => {
+const getCacheStats = async (req, res) => {
   try {
     // TODO: Implement Redis cache stats
     res.json({
@@ -340,7 +340,7 @@ exports.getCacheStats = async (req, res) => {
 };
 
 // Middleware to track HTTP requests
-exports.trackHttpRequest = (req, res, next) => {
+const trackHttpRequest = (req, res, next) => {
   const start = Date.now();
 
   res.on('finish', () => {
@@ -367,4 +367,14 @@ exports.trackHttpRequest = (req, res, next) => {
 
 module.exports = {
   register,
+  healthCheck,
+  getMetrics,
+  getSystemStatus,
+  getDashboard,
+  getActiveUsers,
+  getPerformanceMetrics,
+  getErrorLogs,
+  getDatabaseStats,
+  getCacheStats,
+  trackHttpRequest,
 };

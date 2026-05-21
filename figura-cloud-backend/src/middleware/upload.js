@@ -59,7 +59,7 @@ const handleMulterError = (err, req, res, next) => {
 };
 
 // Middleware for avatar uploads
-exports.uploadAvatar = [
+const uploadAvatar = [
   upload.fields([
     { name: 'luaScript', maxCount: 1 },
     { name: 'thumbnail', maxCount: 1 },
@@ -77,7 +77,7 @@ exports.uploadAvatar = [
 ];
 
 // Middleware for single file uploads
-exports.uploadSingle = (fieldName) => {
+const uploadSingle = (fieldName) => {
   return [
     upload.single(fieldName),
     handleMulterError,
@@ -85,7 +85,7 @@ exports.uploadSingle = (fieldName) => {
 };
 
 // Middleware for multiple file uploads
-exports.uploadMultiple = (fieldName, maxCount = 10) => {
+const uploadMultiple = (fieldName, maxCount = 10) => {
   return [
     upload.array(fieldName, maxCount),
     handleMulterError,
@@ -95,4 +95,7 @@ exports.uploadMultiple = (fieldName, maxCount = 10) => {
 module.exports = {
   upload,
   handleMulterError,
+  uploadAvatar,
+  uploadSingle,
+  uploadMultiple,
 };
