@@ -1,129 +1,124 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const { sequelize } = require('../config/database');
 
-const userSchema = new mongoose.Schema(
-  {
-    username: {
-      type: String,
-      required: [true, 'Username is required'],
-      unique: true,
-      trim: true,
-      minlength: 3,
-      maxlength: 30,
-    },
-    email: {
-      type: String,
-      required: [true, 'Email is required'],
-      unique: true,
-      lowercase: true,
-      trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
-    },
-    password: {
-      type: String,
-      required: [true, 'Password is required'],
-      minlength: 8,
-      select: false,
-    },
-    role: {
-      type: String,
-      enum: ['user', 'moderator', 'admin', 'superadmin'],
-      default: 'user',
-    },
-    avatar: {
-      type: String,
-      default: null,
-    },
-    bio: {
-      type: String,
-      maxlength: 500,
-    },
-    minecraftUsername: {
-      type: String,
-      trim: true,
-    },
-    figuraId: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    lastLogin: {
-      type: Date,
-    },
-    permissions: [
-      {
-        resource: String,
-        actions: [String],
-      },
-    ],
-    settings: {
-      theme: {
-        type: String,
-        enum: ['light', 'dark', 'auto'],
-        default: 'auto',
-      },
-      language: {
-        type: String,
-        default: 'en',
-      },
-      notifications: {
-        email: { type: Boolean, default: true },
-        push: { type: Boolean, default: true },
-      },
-    },
-    stats: {
-      avatarsCreated: { type: Number, default: 0 },
-      totalDownloads: { type: Number, default: 0 },
-      totalViews: { type: Number, default: 0 },
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
+  username: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      len: [3, 30],
     },
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
-);
-
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(process.env.BCRYPT_ROUNDS || 12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
-  }
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+    validate: {
+      isEmail: true,
+    },
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [8],
+    },
+  },
+  role: {
+    type: DataTypes.ENUM('user', 'moderator', 'admin', 'superadmin'),
+    defaultValue: 'user',
+  },
+  avatar: {
+    type: DataTypes.STRING,
+    defaultValue: null,
+  },
+  bio: {
+    type: DataTypes.TEXT,
+    validate: {
+      len: [0, 500],
+    },
+  },
+  minecraftUsername: {
+    type: DataTypes.STRING,
+  },
+  figuraId: {
+    type: DataTypes.STRING,
+    unique: true,
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  lastLogin: {
+    type: DataTypes.DATE,
+  },
+  permissions: {
+    type: DataTypes.JSONB,
+    defaultValue: [],
+  },
+  settings: {
+    type: DataTypes.JSONB,
+    defaultValue: {
+      theme: 'auto',
+      language: 'en',
+      notifications: {
+        email: true,
+        push: true,
+      },
+    },
+  },
+  stats: {
+    type: DataTypes.JSONB,
+    defaultValue: {
+      avatarsCreated: 0,
+      totalDownloads: 0,
+      totalViews: 0,
+    },
+  },
+}, {
+  timestamps: true,
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        const salt = await bcrypt.genSalt(process.env.BCRYPT_ROUNDS || 12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(process.env.BCRYPT_ROUNDS || 12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    },
+  },
 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function (candidatePassword) {
+// Instance methods
+User.prototype.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Update last login
-userSchema.methods.updateLastLogin = function () {
+User.prototype.updateLastLogin = async function() {
   this.lastLogin = new Date();
-  return this.save();
+  await this.save();
 };
 
-// Virtual for full name
-userSchema.virtual('fullName').get(function () {
-  return this.username;
+// Virtual for fullName (handled via getter)
+Object.defineProperty(User.prototype, 'fullName', {
+  get() {
+    return this.username;
+  }
 });
 
-// Indexes
-userSchema.index({ username: 1, email: 1 });
-userSchema.index({ createdAt: -1 });
-userSchema.index({ role: 1, isActive: 1 });
-
-module.exports = mongoose.model('User', userSchema);
+module.exports = User;

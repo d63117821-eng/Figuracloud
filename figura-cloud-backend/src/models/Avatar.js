@@ -1,133 +1,130 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+const User = require('./User');
 
-const avatarSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, 'Avatar name is required'],
-      trim: true,
-      minlength: 3,
-      maxlength: 100,
-    },
-    description: {
-      type: String,
-      maxlength: 1000,
-    },
-    owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    file: {
-      luaScript: {
-        type: String,
-        required: true,
-      },
-      thumbnail: {
-        type: String,
-      },
-      size: {
-        type: Number,
-        required: true,
-      },
-      hash: {
-        type: String,
-        required: true,
-      },
-    },
-    category: {
-      type: String,
-      enum: ['anime', 'realistic', 'cartoon', 'fantasy', 'sci-fi', 'other'],
-      default: 'other',
-    },
-    tags: [String],
-    visibility: {
-      type: String,
-      enum: ['public', 'private', 'unlisted'],
-      default: 'public',
-    },
-    status: {
-      type: String,
-      enum: ['active', 'pending', 'rejected', 'archived'],
-      default: 'active',
-    },
-    version: {
-      type: String,
-      default: '1.0.0',
-    },
-    figuraVersion: {
-      type: String,
-      required: true,
-    },
-    stats: {
-      views: { type: Number, default: 0 },
-      downloads: { type: Number, default: 0 },
-      likes: { type: Number, default: 0 },
-      comments: { type: Number, default: 0 },
-    },
-    metadata: {
-      author: String,
-      license: {
-        type: String,
-        default: 'CC BY-NC-SA 4.0',
-      },
-      sourceUrl: String,
-      compatibility: [String],
-    },
-    isFeatured: {
-      type: Boolean,
-      default: false,
-    },
-    isVerified: {
-      type: Boolean,
-      default: false,
+const Avatar = sequelize.define('Avatar', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      len: [3, 100],
     },
   },
-  {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-  }
-);
-
-// Indexes for performance
-avatarSchema.index({ owner: 1, createdAt: -1 });
-avatarSchema.index({ visibility: 1, status: 1 });
-avatarSchema.index({ category: 1, tags: 1 });
-avatarSchema.index({ name: 'text', description: 'text', tags: 'text' });
-avatarSchema.index({ 'stats.views': -1 });
-avatarSchema.index({ 'stats.downloads': -1 });
-avatarSchema.index({ 'stats.likes': -1 });
-avatarSchema.index({ isFeatured: 1, createdAt: -1 });
-
-// Virtual for download count
-avatarSchema.virtual('downloadCount').get(function () {
-  return this.stats.downloads;
+  description: {
+    type: DataTypes.TEXT,
+    validate: {
+      len: [0, 1000],
+    },
+  },
+  ownerId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'owner_id',
+    references: {
+      model: User,
+      key: 'id',
+    },
+  },
+  file: {
+    luaScript: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    thumbnail: {
+      type: DataTypes.STRING,
+    },
+    size: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    hash: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+  },
+  category: {
+    type: DataTypes.ENUM('anime', 'realistic', 'cartoon', 'fantasy', 'sci-fi', 'other'),
+    defaultValue: 'other',
+  },
+  tags: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+    defaultValue: [],
+  },
+  visibility: {
+    type: DataTypes.ENUM('public', 'private', 'unlisted'),
+    defaultValue: 'public',
+  },
+  status: {
+    type: DataTypes.ENUM('active', 'pending', 'rejected', 'archived'),
+    defaultValue: 'active',
+  },
+  version: {
+    type: DataTypes.STRING,
+    defaultValue: '1.0.0',
+  },
+  figuraVersion: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  stats: {
+    type: DataTypes.JSONB,
+    defaultValue: {
+      views: 0,
+      downloads: 0,
+      likes: 0,
+      comments: 0,
+    },
+  },
+  metadata: {
+    type: DataTypes.JSONB,
+    defaultValue: {
+      license: 'CC BY-NC-SA 4.0',
+      compatibility: [],
+    },
+  },
+  isFeatured: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+}, {
+  timestamps: true,
+  tableName: 'avatars',
 });
 
-// Methods
-avatarSchema.methods.incrementViews = function () {
-  this.stats.views += 1;
-  return this.save();
+// Associations
+Avatar.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' });
+User.hasMany(Avatar, { foreignKey: 'ownerId', as: 'avatars' });
+
+// Instance methods
+Avatar.prototype.incrementViews = async function() {
+  this.stats.views = (this.stats.views || 0) + 1;
+  await this.save();
 };
 
-avatarSchema.methods.incrementDownloads = function () {
-  this.stats.downloads += 1;
-  return this.save();
+Avatar.prototype.incrementDownloads = async function() {
+  this.stats.downloads = (this.stats.downloads || 0) + 1;
+  await this.save();
 };
 
-avatarSchema.methods.incrementLikes = function () {
-  this.stats.likes += 1;
-  return this.save();
+Avatar.prototype.incrementLikes = async function() {
+  this.stats.likes = (this.stats.likes || 0) + 1;
+  await this.save();
 };
 
-// Static methods
-avatarSchema.statics.search = function (query) {
-  return this.find({
-    $text: { $search: query },
-    visibility: 'public',
-    status: 'active',
-  });
-};
+// Virtual for downloadCount
+Object.defineProperty(Avatar.prototype, 'downloadCount', {
+  get() {
+    return this.stats?.downloads || 0;
+  }
+});
 
-module.exports = mongoose.model('Avatar', avatarSchema);
+module.exports = Avatar;

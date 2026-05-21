@@ -1,71 +1,77 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
+const User = require('./User');
 
-const activityLogSchema = new mongoose.Schema(
-  {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    action: {
-      type: String,
-      required: true,
-      enum: [
-        'login',
-        'logout',
-        'avatar.create',
-        'avatar.update',
-        'avatar.delete',
-        'avatar.download',
-        'avatar.like',
-        'avatar.comment',
-        'user.update',
-        'user.delete',
-        'admin.ban',
-        'admin.unban',
-        'admin.feature',
-        'system.maintenance',
-      ],
-    },
-    resource: {
-      type: {
-        type: String,
-        enum: ['user', 'avatar', 'comment', 'system'],
-        required: true,
-      },
-      id: mongoose.Schema.Types.ObjectId,
-    },
-    details: {
-      type: Map,
-      of: String,
-    },
-    ipAddress: {
-      type: String,
-    },
-    userAgent: {
-      type: String,
-    },
-    status: {
-      type: String,
-      enum: ['success', 'failure', 'pending'],
-      default: 'success',
-    },
-    errorMessage: {
-      type: String,
+const ActivityLog = sequelize.define('ActivityLog', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'user_id',
+    references: {
+      model: User,
+      key: 'id',
     },
   },
-  {
-    timestamps: true,
-  }
-);
+  action: {
+    type: DataTypes.ENUM(
+      'login',
+      'logout',
+      'avatar.create',
+      'avatar.update',
+      'avatar.delete',
+      'avatar.download',
+      'avatar.like',
+      'avatar.comment',
+      'user.update',
+      'user.delete',
+      'admin.ban',
+      'admin.unban',
+      'admin.feature',
+      'system.maintenance'
+    ),
+    allowNull: false,
+  },
+  resourceType: {
+    type: DataTypes.ENUM('user', 'avatar', 'comment', 'system'),
+    allowNull: false,
+    field: 'resource_type',
+  },
+  resourceId: {
+    type: DataTypes.UUID,
+    field: 'resource_id',
+  },
+  details: {
+    type: DataTypes.JSONB,
+    defaultValue: {},
+  },
+  ipAddress: {
+    type: DataTypes.STRING,
+    field: 'ip_address',
+  },
+  userAgent: {
+    type: DataTypes.TEXT,
+    field: 'user_agent',
+  },
+  status: {
+    type: DataTypes.ENUM('success', 'failure', 'pending'),
+    defaultValue: 'success',
+  },
+  errorMessage: {
+    type: DataTypes.TEXT,
+    field: 'error_message',
+  },
+}, {
+  timestamps: true,
+  tableName: 'activity_logs',
+});
 
-// Indexes for performance
-activityLogSchema.index({ user: 1, createdAt: -1 });
-activityLogSchema.index({ action: 1, createdAt: -1 });
-activityLogSchema.index({ 'resource.type': 1, 'resource.id': 1 });
-activityLogSchema.index({ status: 1, createdAt: -1 });
+// Associations
+ActivityLog.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(ActivityLog, { foreignKey: 'userId', as: 'activityLogs' });
 
-// TTL index to auto-delete old logs (optional, e.g., keep for 90 days)
-// activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 });
-
-module.exports = mongoose.model('ActivityLog', activityLogSchema);
+module.exports = ActivityLog;

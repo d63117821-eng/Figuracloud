@@ -7,8 +7,7 @@ module.exports = {
   API_VERSION: process.env.API_VERSION || 'v1',
 
   // Database
-  MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/figura-cloud',
-  MONGODB_TEST_URI: process.env.MONGODB_TEST_URI || 'mongodb://localhost:27017/figura-cloud-test',
+  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://localhost:5432/figura-cloud',
 
   // Redis
   REDIS_HOST: process.env.REDIS_HOST || 'localhost',
