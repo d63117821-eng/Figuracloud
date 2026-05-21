@@ -23,7 +23,7 @@ module.exports = {
   // File Upload
   MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE) || 52428800, // 50MB
   UPLOAD_PATH: process.env.UPLOAD_PATH || './uploads',
-  ALLOWED_FILE_TYPES: process.env.ALLOWED_FILE_TYPES?.split(',') || ['.lua', '.png', '.jpg', '.jpeg'],
+  ALLOWED_FILE_TYPES: process.env.ALLOWED_FILE_TYPES?.split(',') || ['*'], // รองรับไฟล์ทั้งหมด
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
