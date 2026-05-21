@@ -1,38 +1,48 @@
-const mongoose = require('mongoose');
+const { Sequelize } = require('sequelize');
 const config = require('./index');
 const logger = require('../utils/logger');
 
+// Create Sequelize instance
+const sequelize = new Sequelize(config.DATABASE_URL, {
+  dialect: 'postgres',
+  logging: config.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
+  pool: {
+    max: 10,
+    min: 0,
+    acquire: 30000,
+    idle: 10000,
+  },
+});
+
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(config.MONGODB_URI, {
-      // Mongoose 6+ options
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    // Test connection
+    await sequelize.authenticate();
+    logger.info('PostgreSQL Connected successfully');
 
-    logger.info(`MongoDB Connected: ${conn.connection.host}`);
+    // Sync models (in development mode, this will create tables)
+    if (config.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true });
+      logger.info('Database synchronized');
+    }
 
     // Handle connection events
-    mongoose.connection.on('error', (err) => {
-      logger.error(`MongoDB connection error: ${err.message}`);
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      logger.warn('MongoDB disconnected');
+    sequelize.connectionManager.on('error', (err) => {
+      logger.error(`PostgreSQL connection error: ${err.message}`);
     });
 
     // Graceful shutdown
     process.on('SIGINT', async () => {
-      await mongoose.connection.close();
-      logger.info('MongoDB connection closed through app termination');
+      await sequelize.close();
+      logger.info('PostgreSQL connection closed through app termination');
       process.exit(0);
     });
 
-    return conn;
+    return sequelize;
   } catch (error) {
-    logger.error(`Error connecting to MongoDB: ${error.message}`);
+    logger.error(`Error connecting to PostgreSQL: ${error.message}`);
     process.exit(1);
   }
 };
 
-module.exports = connectDB;
+module.exports = { sequelize, connectDB };
