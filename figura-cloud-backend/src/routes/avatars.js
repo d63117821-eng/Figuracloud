@@ -68,10 +68,9 @@ router.get('/', optionalAuth, [
   query('order').optional().isIn(['asc', 'desc']),
   query('category').optional().isString(),
   query('search').optional().isString(),
-  validate,
-], avatarController.getAllAvatars);
+  validate], avatarController.getAllAvatars);
 
-router.post('/', protect, uploadLimiter, uploadAvatar, createAvatarValidation, avatarController.createAvatar);
+router.post('/', protect, uploadLimiter, ...uploadAvatar, ...createAvatarValidation, avatarController.createAvatar);
 
 router.get('/:id', optionalAuth, avatarController.getAvatarById);
 
