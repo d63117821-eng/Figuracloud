@@ -63,9 +63,10 @@ exports.register = async (req, res, next) => {
 
     // Log activity
     await ActivityLog.create({
-      user: user._id,
+      userId: user.id,
       action: 'user.create',
-      resource: { type: 'user', id: user._id },
+      resourceType: 'user',
+      resourceId: user.id,
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
     });
@@ -93,7 +94,7 @@ exports.login = async (req, res, next) => {
     }
 
     // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -123,9 +124,10 @@ exports.login = async (req, res, next) => {
 
     // Log activity
     await ActivityLog.create({
-      user: user._id,
+      userId: user.id,
       action: 'login',
-      resource: { type: 'user', id: user._id },
+      resourceType: 'user',
+      resourceId: user.id,
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
     });
@@ -144,9 +146,10 @@ exports.logout = async (req, res, next) => {
   try {
     // Log activity
     await ActivityLog.create({
-      user: req.user._id,
+      userId: req.user.id,
       action: 'logout',
-      resource: { type: 'user', id: req.user._id },
+      resourceType: 'user',
+      resourceId: req.user.id,
       ipAddress: req.ip,
       userAgent: req.get('user-agent'),
     });
